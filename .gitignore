@@ -1,0 +1,12 @@
+.DS_Store
+training_data
+*.pyc
+test_data
+output.txt
+outputfiltered.txt
+output1LSTM.txt
+output2LSTM.txt
+result_data
+result_data2layer
+training/keras/models
+emails.txt
