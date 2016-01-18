@@ -168,7 +168,6 @@ def get_threshold(thresholds_dir, mail):
         return float(f.read())
 
 def load_and_run_all_models(config, emails_list_file, emails_data_base_dir):
-    config = LSTM2Layers2DropoutsConfig()
     emails = get_emails(emails_list_file)
     total_err = 0.0
     for mail in emails:

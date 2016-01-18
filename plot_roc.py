@@ -4,7 +4,7 @@ import os, sys
 from emails import get_emails
 from sklearn.metrics import roc_curve, auc
 
-def get_result(mail, results_dir="results_data"):
+def get_result(mail, results_dir="training/keras/models/lstm2layer2dropout/results"):
     filename = os.path.join(results_dir, mail + ".txt")
     with open(filename) as f:
         resultset = [d.split(',') for d in f.read().splitlines()]
