@@ -122,10 +122,10 @@ class Embed2LSTMConfig(Config):
 def train_on_full_data(config, mail, X_train, y_train):
     print("Training on full data")
     X_train = sequence.pad_sequences(X_train, maxlen=config.max_seq_len)
-    X_train = np.reshape(X_train, (X_train.shape[0], config.max_seq_len, 1))
+    X_train, X_train = config.additional_data_transform(X_train, X_train)
     max_value = X_train.max() + 1
     print('Build model...')
-    model = config.build_model()
+    model = config.build_model(max_value)
     model.compile(loss=config.loss_function,
                   optimizer=config.optimizer,
                   class_mode=config.class_mode)
@@ -158,10 +158,10 @@ def load_and_run_model(config, model_file, model_weights_file, threshold, X_data
     model = load_model(model_file, model_weights_file)
 
     X_data = sequence.pad_sequences(X_data, maxlen=config.max_seq_len)
-    X_data = np.reshape(X_data, (X_data.shape[0], config.max_seq_len, 1))
+    X_data, X_data = config.additional_data_transform(X_data, X_data)
 
     pred = model.predict(X_data)
-    return np.mean(np.abs(y_data - (pred > threshold)))
+    return np.mean(np.abs(y_data - (pred.T > threshold)))
 
 def get_threshold(thresholds_dir, mail):
     with open(os.path.join(thresholds_dir, mail + ".txt")) as f:
@@ -212,7 +212,6 @@ def find_threshold(y_score, y):
             best_th = t
             best_false_positives = fp
 
-    # print("Err:", np.mean(np.abs(np.array(y) - (np.array(y_score) > best_th))), "Th:", best_th, "FP:", false_positives(y_score, y, best_th))
     return best_th
 
 def compute_thresholds(out_results_dir, thresholds_dir, emails_list_file):
@@ -224,8 +223,9 @@ def compute_thresholds(out_results_dir, thresholds_dir, emails_list_file):
         y_score, y = get_result(mail, out_results_dir)
 
         th = find_threshold(y_score, y)
-        print("That was for:", mail)
-        with open(os.path.join(thresholds_dir, mail + ".txt"), "w+") as f:
+        th_file = os.path.join(thresholds_dir, mail + ".txt")
+        print("Saving threshold:", th_file)
+        with open(th_file, "w+") as f:
             f.write(str(th))
 
 
@@ -354,8 +354,8 @@ if __name__ == "__main__":
         emails_test_data_dir = argv[3]
 
     configs = [
-            LSTM2Layers1DropoutsConfig(),
             Embed2LSTMConfig(),
+            LSTM2Layers1DropoutsConfig(),
             LSTM2Layers2DropoutsConfig()
         ]
     for config in configs:
