@@ -4,14 +4,14 @@ defmodule FileKeyCodeMapper do
     output_file_name = filename <> ".output.txt"
     {:ok, output} = File.open(output_file_name, [:write])
     File.stream!(filename)
-      |> Enum.map(&(String.split(&1, ";")))
-      |> Enum.filter(fn [h|_] -> h == "keydown" end)
-      |> Enum.map(&(replace(&1)))
-      |> Enum.map(&(Enum.join(&1, ";")))
-      |> Enum.each(&(IO.binwrite(output, &1)))
+    |> Enum.map(&(String.split(&1, ";")))
+    |> Enum.filter(fn [h|_] -> h == "keydown" end)
+    |> Enum.map(&(replace(&1)))
+    |> Enum.map(&(Enum.join(&1, ";")))
+    |> Enum.each(&(IO.binwrite(output, &1)))
 
-      File.close(output)
-      output_file_name
+    File.close(output)
+    output_file_name
   end
 
   def replace(list) when length(list) != 5 do
