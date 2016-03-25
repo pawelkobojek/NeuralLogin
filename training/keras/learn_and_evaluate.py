@@ -14,7 +14,6 @@ from keras.models import Sequential, model_from_json
 from keras.layers.core import Dense, Dropout, Activation, Lambda
 from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import LSTM
-from keras.datasets import imdb
 
 from emails import get_emails
 
