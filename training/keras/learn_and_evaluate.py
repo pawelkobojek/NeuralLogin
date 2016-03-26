@@ -1,8 +1,8 @@
 from __future__ import print_function
 import sys, os
 sys.path.append("../../")
-import dataset
 import gather_results
+from dataset import ArtrificialDataset, GaussianGenerator
 
 import numpy as np
 import theano
@@ -33,6 +33,36 @@ class Config(object):
 
     def additional_data_transform(self, X_train, X_test):
         raise NotImplementedError("Abstract method!")
+
+class LSTM2Layers2DropoutsArtrificialDataConfig(Config):
+    save_model_dir  = os.path.join(Config.base_save_model_dir, "lstm2layer2dropoutArtrificial")
+    results_file    = os.path.join(save_model_dir, "total_results.txt")
+    out_results_dir = os.path.join(save_model_dir, "results")
+    thresholds_dir  = os.path.join(save_model_dir, "thresholds")
+
+    def __init__(self, first_layer = 250, input_length = 100):
+        self.first_layer = first_layer
+        self.input_length = input_length
+        if not os.path.exists(self.out_results_dir):
+            os.makedirs(self.out_results_dir)
+        if not os.path.exists(self.thresholds_dir):
+            os.makedirs(self.thresholds_dir)
+
+    def build_model(self, max_value = -1):
+        model = Sequential()
+        model.add(LSTM(self.first_layer, input_shape=(self.input_length, 1), return_sequences=True))
+        model.add(Dropout(self.dropout))
+        model.add(LSTM(self.input_length))
+        model.add(Dropout(self.dropout))
+        model.add(Dense(1))
+        model.add(Activation(self.activation))
+        return model
+
+    def additional_data_transform(self, X_train, X_test):
+        X_train = np.reshape(X_train, (X_train.shape[0], config.max_seq_len, 1))
+        X_test = np.reshape(X_test, (X_test.shape[0], config.max_seq_len, 1))
+        return X_train, X_test
+
 
 class LSTM2Layers2DropoutsConfig(Config):
     save_model_dir  = os.path.join(Config.base_save_model_dir, "lstm2layer2dropout")
@@ -166,11 +196,11 @@ def get_threshold(thresholds_dir, mail):
     with open(os.path.join(thresholds_dir, mail + ".txt")) as f:
         return float(f.read())
 
-def load_and_run_all_models(config, emails_list_file, emails_data_base_dir):
+def load_and_run_all_models(config, emails_list_file, dataset):
     emails = get_emails(emails_list_file)
     total_err = 0.0
     for mail in emails:
-        X_data, Y_data     = dataset.load_data(mail, emails_data_base_dir)
+        X_data, Y_data     = dataset.load(mail)
         model_path         = os.path.join(config.save_model_dir, mail, "full")
         model_object_path  = os.path.join(model_path, "model.json")
         model_weights_path = os.path.join(model_path, "weights.h5")
@@ -228,7 +258,7 @@ def compute_thresholds(out_results_dir, thresholds_dir, emails_list_file):
             f.write(str(th))
 
 
-def train_and_evaluate(config, emails_list_file, emails_data_base_dir):
+def train_and_evaluate(config, emails_list_file, dataset):
     emails = get_emails(emails_list_file)
     totalFP = 0
     totalFN = 0
@@ -239,7 +269,7 @@ def train_and_evaluate(config, emails_list_file, emails_data_base_dir):
     for mail in emails:
 
         print('Loading data...')
-        X_data, Y_data = dataset.load_data(mail, emails_data_base_dir)
+        X_data, Y_data = dataset.load(mail)
 
         falsePositives = 0
         falseNegatives = 0
@@ -352,11 +382,15 @@ if __name__ == "__main__":
     if len(sys.argv) > 3:
         emails_test_data_dir = argv[3]
 
+    dataset = ArtrificialDataset(emails_data_base_dir,
+                    GaussianGenerator(0, 50), 1)
+
     configs = [
-            LSTM2Layers1DropoutsConfig(),
-            Embed2LSTMConfig(),
-            LSTM2Layers2DropoutsConfig()
+            # LSTM2Layers1DropoutsConfig(),
+            # Embed2LSTMConfig(),
+            # LSTM2Layers2DropoutsConfig()
+            LSTM2Layers2DropoutsArtrificialDataConfig()
         ]
     for config in configs:
-        train_and_evaluate(config, emails_list_file, emails_data_base_dir)
-        load_and_run_all_models(config, emails_list_file, emails_data_base_dir)
+        train_and_evaluate(config, emails_list_file, dataset)
+        load_and_run_all_models(config, emails_list_file, dataset)
