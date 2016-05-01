@@ -10,3 +10,5 @@ result_data
 result_data2layer
 training/keras/models
 emails.txt
+__pycache__
+benchmark_results

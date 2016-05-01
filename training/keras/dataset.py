@@ -25,6 +25,21 @@ class Dataset(object):
 
         return X_data, Y_data
 
+class BenchmarkDataset(Dataset):
+    def __init__(self, base_dir):
+        super(BenchmarkDataset, self).__init__(base_dir)
+
+    def load(self, mail):
+        filename = os.path.join(self.base_dir, mail + ".txt")
+        # filename = "../../training_data/" + mail + ".txt"
+        with open(filename) as f:
+            dataset = [d.split(',') for d in f.read().splitlines()]
+            Y_data = [int(c[0]) for c in dataset]
+            X_data = [c[1:] for c in dataset]
+            X_data = list(map(lambda x: list(map(lambda y: float(y), x)), X_data))
+
+        return X_data, Y_data
+
 class ArtrificialDataset(Dataset):
     def __init__(self, base_dir, generator, artrificial_rows_count):
         super(ArtrificialDataset, self).__init__(base_dir)
