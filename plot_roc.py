@@ -15,7 +15,11 @@ def get_result(mail, results_dir="training/keras/models/lstm2layer2dropout/resul
         return y_score, y
 
 if __name__ == '__main__':
-    emails = get_emails()
+    emails = get_emails("subjects.txt")
+
+    roc_dir = "rocs"
+    if not os.path.exists(roc_dir):
+        os.makedirs(roc_dir)
 
     for mail in emails:
         if len(sys.argv) > 1:
@@ -38,4 +42,4 @@ if __name__ == '__main__':
         plt.ylabel('True Positive Rate')
         plt.title('ROC curve for %s' % mail)
         plt.legend(loc="lower right")
-        plt.show()
+        plt.savefig(os.path.join(roc_dir, mail + ".png"))
