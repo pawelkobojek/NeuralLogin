@@ -156,8 +156,7 @@ def train_on_full_data(config, mail, X_train, y_train):
     print('Build model...')
     model = config.build_model()
     model.compile(loss=config.loss_function,
-                  optimizer=config.optimizer,
-                  class_mode=config.class_mode)
+                  optimizer=config.optimizer)
     print("Train...")
     model.fit(X_train, y_train, batch_size=config.batch_size, nb_epoch=config.epochs)
     model_path         = os.path.join(config.save_model_dir, mail, "full")
@@ -185,6 +184,7 @@ def appendResults(result_string, results_file):
 
 def load_and_run_model(config, model_file, model_weights_file, threshold, X_data, y_data):
     model = load_model(model_file, model_weights_file)
+    model.compile(loss='binary_crossentropy', optimizer='adam')
 
     X_data = sequence.pad_sequences(X_data, maxlen=config.max_seq_len)
     X_data = np.reshape(X_data, (X_data.shape[0], config.max_seq_len, 1))
@@ -200,7 +200,10 @@ def load_and_run_all_models(config, emails_list_file, dataset):
     emails = get_emails(emails_list_file)
     total_err = 0.0
     for mail in emails:
-        X_data, Y_data     = dataset.load(mail)
+        if isinstance(dataset, ArtrificialDataset):
+            X_data, Y_data, negative_X_test, negative_Y_test = dataset.load(mail)
+        else:
+            X_data, Y_data     = dataset.load(mail)
         model_path         = os.path.join(config.save_model_dir, mail, "full")
         model_object_path  = os.path.join(model_path, "model.json")
         model_weights_path = os.path.join(model_path, "weights.h5")
@@ -269,7 +272,12 @@ def train_and_evaluate(config, emails_list_file, dataset):
     for mail in emails:
 
         print('Loading data...')
-        X_data, Y_data = dataset.load(mail)
+        if isinstance(dataset, ArtrificialDataset):
+            X_data, Y_data, negative_X_test, negative_Y_test = dataset.load(mail)
+        else:
+            X_data, Y_data = dataset.load(mail)
+
+        next_real_negative = 0
 
         falsePositives = 0
         falseNegatives = 0
@@ -291,6 +299,10 @@ def train_and_evaluate(config, emails_list_file, dataset):
             X_test  = X_data[0:1]
             y_test  = Y_data[0:1]
 
+            if isinstance(dataset, ArtrificialDataset) and y_test == 0:
+                X_test = negative_X_test[next_real_negative]
+                next_real_negative = (next_real_negative + 1) % len(negative_X_test)
+
             print(len(X_train), 'train sequences')
 
             print("Pad sequences (samples x time)")
@@ -304,15 +316,15 @@ def train_and_evaluate(config, emails_list_file, dataset):
             print('Build model...')
             model = config.build_model(max_value)
             model.compile(loss=config.loss_function,
-                          optimizer=config.optimizer,
-                          class_mode=config.class_mode)
+                          optimizer=config.optimizer, metrics = ["accuracy"])
 
             print("Train...")
+
+
             model.fit(X_train, y_train, batch_size=config.batch_size, nb_epoch=config.epochs,
-                      validation_data=(X_test, y_test), show_accuracy=True)
-            score, acc = model.evaluate(X_test, y_test,
-                                        batch_size=config.batch_size,
-                                        show_accuracy=True)
+                      validation_data=(X_test, np.array(y_test)))
+            score, acc = model.evaluate(X_test, np.array(y_test),
+                                        batch_size=config.batch_size)
 
             prediction = model.predict(X_test)
             predicted_class = round(abs(float(prediction)))
@@ -383,7 +395,7 @@ if __name__ == "__main__":
         emails_test_data_dir = argv[3]
 
     dataset = ArtrificialDataset(emails_data_base_dir,
-                    GaussianGenerator(0, 50), 1)
+                    GaussianGenerator(0, 350), 1)
 
     configs = [
             # LSTM2Layers1DropoutsConfig(),
@@ -392,5 +404,5 @@ if __name__ == "__main__":
             LSTM2Layers2DropoutsArtrificialDataConfig()
         ]
     for config in configs:
-        train_and_evaluate(config, emails_list_file, dataset)
+        # train_and_evaluate(config, emails_list_file, dataset)
         load_and_run_all_models(config, emails_list_file, dataset)

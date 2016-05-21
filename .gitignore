@@ -12,4 +12,10 @@ training/keras/models
 emails.txt
 __pycache__
 benchmark_results
-rocs
+benchmark_full_results
+rocs*
+pwd.txt
+
+benchmark_set/*
+benchmark_set_full/*
+dataset/dataset

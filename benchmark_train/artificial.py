@@ -10,7 +10,7 @@ import numpy as np
 import theano
 np.random.seed(1337)  # for reproducibility
 
-from training.keras.dataset import BenchmarkDataset
+from training.keras.dataset import BenchmarkDataset, ArtrificialDataset
 from keras.preprocessing import sequence
 from keras.utils import np_utils
 
@@ -71,10 +71,10 @@ def find_threshold(y_score, y):
 
 
 if __name__ == "__main__":
-    dataset_dir = "benchmark_set_full"
+    dataset_dir = "benchmark_set"
     emails_file = "subjects.txt"
 
-    dataset = BenchmarkDataset(dataset_dir)
+    dataset = ArtificialBenchmarkDataset(dataset_dir)
     subjects = get_emails(emails_file)
     configs = [
                 LSTM2Layers2DropoutsConfig(first_layer=240, second_layer=100, input_length=10),

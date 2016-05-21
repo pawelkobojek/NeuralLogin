@@ -26,7 +26,7 @@ defmodule Dataset.Mapper do
     |> Enum.map(&Float.parse/1)
     |> Enum.map(&(elem(&1, 0)))
     |> Enum.map(&(&1 * 1000))
-    |> Enum.take_every(3)
+    # |> Enum.take_every(3)
 
     [is_current | mapped_values]
   end

@@ -14,7 +14,7 @@ from training.keras.dataset import BenchmarkDataset
 from keras.preprocessing import sequence
 from keras.utils import np_utils
 
-from config import LSTM3Layers3DropoutsConfig, GRU3Layers3DropoutsConfig, LSTM2Layers2DropoutsConfig
+from config import LSTM3Layers3DropoutsConfig, GRU3Layers3DropoutsConfig, LSTM2Layers2DropoutsConfig, OneClassGRU3Layers3DropoutsConfig
 
 def train_test_split(X, y, test_size=0.2):
     positive_count = sum(y)
@@ -65,21 +65,29 @@ def find_threshold(y_score, y):
         if fp < best_false_positives:
             best_th = t
             best_false_positives = fp
-
-    # print("Err:", np.mean(np.abs(np.array(y) - (np.array(y_score) > best_th))), "Th:", best_th, "FP:", false_positives(y_score, y, best_th))
     return best_th
 
+def get_impostor_test(X, y):
+    X = np.array(X)
+
+    indices = []
+    i = 400
+    while i < len(X):
+        for j in range(5):
+            indices.append(i + j)
+        i += 400
+    return X[indices], y[indices]
 
 if __name__ == "__main__":
-    dataset_dir = "benchmark_set_full"
+    dataset_dir = "benchmark_set"
     emails_file = "subjects.txt"
 
     dataset = BenchmarkDataset(dataset_dir)
     subjects = get_emails(emails_file)
     configs = [
-                LSTM2Layers2DropoutsConfig(first_layer=240, second_layer=100, input_length=10),
-                LSTM3Layers3DropoutsConfig(first_layer=240, second_layer=240, input_length=10),
-                GRU3Layers3DropoutsConfig(first_layer=240, second_layer=240, input_length=10)
+                # LSTM2Layers2DropoutsConfig(first_layer=240, second_layer=100, input_length=10),
+                # LSTM3Layers3DropoutsConfig(first_layer=240, second_layer=240, input_length=10),
+                OneClassGRU3Layers3DropoutsConfig(first_layer=240, second_layer=240, input_length=10)
             ]
 
     for config in configs:
@@ -88,28 +96,42 @@ if __name__ == "__main__":
             X, y = dataset.load(subject)
             X = np.array(X)
             y = np.array(y)
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+            X_train = X[:200]
+            y_train = y[:200]
+
+            genuine_X_test = X[200:401]
+            genuine_Y_test = y[200:401]
+            impostor_X_test, impostor_Y_test = get_impostor_test(X, y)
+
             X_train = normalize(X_train)
-            X_test = normalize(X_test)
+            genuine_X_test = normalize(genuine_X_test)
+            impostor_X_test = normalize(impostor_X_test)
 
             model = config.build_and_compile()
 
             X_train = sequence.pad_sequences(X_train, maxlen=10, dtype='float32')
-            X_test = sequence.pad_sequences(X_test, maxlen=10, dtype='float32')
+            genuine_X_test = sequence.pad_sequences(genuine_X_test, maxlen=10, dtype='float32')
+            impostor_X_test = sequence.pad_sequences(impostor_X_test, maxlen=10, dtype='float32')
 
             X_train = np.reshape(X_train, (X_train.shape[0], 10, 1))
-            X_test = np.reshape(X_test, (X_test.shape[0], 10, 1))
+            genuine_X_test = np.reshape(genuine_X_test, (genuine_X_test.shape[0], 10, 1))
+            impostor_X_test = np.reshape(impostor_X_test, (impostor_X_test.shape[0], 10, 1))
 
             print("Train...")
-            model.fit(X_train, y_train, batch_size=config.batch_size, nb_epoch=config.epochs,
-                      validation_data=(X_test, y_test))
-            score, acc = model.evaluate(X_test, y_test,
-                                        batch_size=config.batch_size)
+            model.fit(X_train, y_train, batch_size=config.batch_size, nb_epoch=config.epochs)
 
-            prediction = model.predict(X_test).flatten()
-            predicted_classes = np.round(prediction)
-            correct = y_test == predicted_classes
-            incorrect = y_test != predicted_classes
+            genuine_score, genuine_acc = model.evaluate(genuine_X_test, genuine_Y_test, batch_size=config.batch_size)
+            impostor_score, impostor_acc = model.evaluate(impostor_X_test, impostor_Y_test, batch_size=config.batch_size)
+
+            print(genuine_acc, impostor_acc)
+
+            print("Errors intented here")
+
+            genuine_prediction = model.predict(genuine_X_test).flatten()
+            genuine_predicted_classes = np.round(genuine_prediction)
+            genuine_correct = y_test == predicted_classes
+            genuine_incorrect = y_test != predicted_classes
 
             TP = sum(np.logical_and(correct, y_test == 1))
             TN = sum(np.logical_and(correct, y_test == 0))

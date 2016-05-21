@@ -40,12 +40,14 @@ if __name__ == "__main__":
                 totalTN = 0
 
                 for mail in emails:
-                    X_data, Y_data = dataset.load(mail)
+                    X_data, Y_data, negative_X_test, negative_Y_test = dataset.load(mail)
 
                     falsePositives = 0
                     falseNegatives = 0
                     truePositives  = 0
                     trueNegatives  = 0
+
+                    next_real_negative = 0
                     for i in range(len(X_data)):
                         tmp       = X_data[i]
                         X_data[i] = X_data[0]
@@ -59,6 +61,11 @@ if __name__ == "__main__":
                         y_train = Y_data[1:]
                         X_test  = X_data[0:1]
                         y_test  = Y_data[0:1]
+
+                        if y_test == 0:
+                            # if example is negative, use "real" negative data
+                            X_test = negative_X_test[next_real_negative]
+                            next_real_negative = (next_real_negative + 1) % len(negative_X_test)
 
                         X_train = sequence.pad_sequences(X_train, maxlen=100)
                         X_test = sequence.pad_sequences(X_test, maxlen=100)
