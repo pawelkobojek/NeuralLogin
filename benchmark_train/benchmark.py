@@ -77,9 +77,9 @@ if __name__ == "__main__":
     dataset = BenchmarkDataset(dataset_dir)
     subjects = get_emails(emails_file)
     configs = [
-                LSTM2Layers2DropoutsConfig(first_layer=240, second_layer=100, input_length=10),
+                #LSTM2Layers2DropoutsConfig(first_layer=240, second_layer=100, input_length=10),
                 LSTM3Layers3DropoutsConfig(first_layer=240, second_layer=240, input_length=10),
-                GRU3Layers3DropoutsConfig(first_layer=240, second_layer=240, input_length=10)
+                #GRU3Layers3DropoutsConfig(first_layer=240, second_layer=240, input_length=10)
             ]
 
     for config in configs:
@@ -100,7 +100,7 @@ if __name__ == "__main__":
             X_train = np.reshape(X_train, (X_train.shape[0], 10, 1))
             X_test = np.reshape(X_test, (X_test.shape[0], 10, 1))
 
-            print("Train...")
+            print("Train...", subject)
             model.fit(X_train, y_train, batch_size=config.batch_size, nb_epoch=config.epochs,
                       validation_data=(X_test, y_test))
             score, acc = model.evaluate(X_test, y_test,

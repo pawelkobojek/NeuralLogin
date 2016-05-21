@@ -10,11 +10,19 @@ import numpy as np
 import theano
 np.random.seed(1337)  # for reproducibility
 
+<<<<<<< HEAD
 from training.keras.dataset import BenchmarkDataset, ArtrificialDataset, GaussianGenerator
 from keras.preprocessing import sequence
 from keras.utils import np_utils
 
 from config import ArtificialLSTM3Layers3DropoutsConfig, ArtificialGRU3Layers3DropoutsConfig, ArtificialLSTM2Layers2DropoutsConfig
+=======
+from training.keras.dataset import BenchmarkDataset, ArtrificialDataset
+from keras.preprocessing import sequence
+from keras.utils import np_utils
+
+from config import LSTM3Layers3DropoutsConfig, GRU3Layers3DropoutsConfig, LSTM2Layers2DropoutsConfig
+>>>>>>> Experiment on full benchmark data
 
 def train_test_split(X, y, test_size=0.2):
     positive_count = sum(y)
@@ -74,6 +82,7 @@ if __name__ == "__main__":
     dataset_dir = "benchmark_set"
     emails_file = "subjects.txt"
 
+<<<<<<< HEAD
     dataset = BenchmarkDataset(dataset_dir)
     subjects = get_emails(emails_file)
     configs = [
@@ -83,6 +92,16 @@ if __name__ == "__main__":
             ]
 
     generator = GaussianGenerator(mean=0, std=150)
+=======
+    dataset = ArtificialBenchmarkDataset(dataset_dir)
+    subjects = get_emails(emails_file)
+    configs = [
+                LSTM2Layers2DropoutsConfig(first_layer=240, second_layer=100, input_length=10),
+                LSTM3Layers3DropoutsConfig(first_layer=240, second_layer=240, input_length=10),
+                GRU3Layers3DropoutsConfig(first_layer=240, second_layer=240, input_length=10)
+            ]
+
+>>>>>>> Experiment on full benchmark data
     for config in configs:
         # We are going to train separate model for each subject
         for subject in subjects:
@@ -90,11 +109,14 @@ if __name__ == "__main__":
             X = np.array(X)
             y = np.array(y)
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+<<<<<<< HEAD
             halfind = len(X_train) / 2
             print(halfind)
             for i in range(int(halfind)):
                 X_train[halfind + i] = generator.generate(X_train[i])
 
+=======
+>>>>>>> Experiment on full benchmark data
             X_train = normalize(X_train)
             X_test = normalize(X_test)
 

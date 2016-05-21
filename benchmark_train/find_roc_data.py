@@ -42,14 +42,18 @@ def load_model(model_file, model_weights_file):
     return model
 
 if __name__ == "__main__":
-    dataset_dir = "benchmark_set"
+    dataset_dir = "benchmark_set_full"
     emails_file = "subjects.txt"
-    base_results_dir = "benchmark_results"
+    base_results_dir = "benchmark_full_results"
 
     dataset = BenchmarkDataset(dataset_dir)
     subjects = get_emails(emails_file)
 
-    configs = ["lstm3layer3dropout", "gru3layer3dropout", "lstm2layer2dropout"]
+    configs = [
+               "lstm3layer3dropout",
+                #"gru3layer3dropout",
+                # "lstm2layer2dropout"
+            ]
 
     for config in configs:
         for subject in subjects:

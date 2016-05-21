@@ -168,7 +168,6 @@ class ArtificialLSTM2Layers2DropoutsConfig(Config):
                       optimizer=self.optimizer, metrics=["accuracy"])
         return model
 
-
 class OneClassGRU3Layers3DropoutsConfig(Config):
     save_model_dir  = os.path.join(Config.base_save_model_dir, "oneclassgru3layer3dropout")
     out_results_dir = os.path.join(save_model_dir, "results")
