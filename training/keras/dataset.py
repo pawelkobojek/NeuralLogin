@@ -40,40 +40,6 @@ class BenchmarkDataset(Dataset):
 
         return X_data, Y_data
 
-class ArtificialBenchmarkDataset(Dataset):
-    def __init__(self, base_dir, generator):
-        super(BenchmarkDataset, self).__init__(base_dir)
-        self.generator = generator
-
-    def load(self, mail):
-        filename = os.path.join(self.base_dir, mail + ".txt")
-        # filename = "../../training_data/" + mail + ".txt"
-        with open(filename) as f:
-            dataset = [d.split(',') for d in f.read().splitlines()]
-            Y_data = [int(c[0]) for c in dataset]
-            X_data = [c[1:] for c in dataset]
-            X_data = list(map(lambda x: list(map(lambda y: float(y), x)), X_data))
-
-        return X_data, Y_data
-
-    def load_positive_data(self, mail, base_dir="../../training_data"):
-        filename = os.path.join(base_dir, mail + ".txt")
-        # filename = "../../training_data/" + mail + ".txt"
-        with open(filename) as f:
-            dataset = [d.split(',') for d in f.read().splitlines() if d.split(',')[0] == '1']
-            Y_data = [int(c[0]) for c in dataset]
-            X_data = [c[1:] for c in dataset]
-            X_data = list(map(lambda x: list(map(lambda y: int(y), x)), X_data))
-
-            only_negatives = [d.split(',') for d in f.read().splitlines() if d.split(',')[0] == '0']
-            negative_Y_test = [int(c[0]) for c in dataset]
-            negative_X_test = [c[1:] for c in dataset]
-            negative_X_test = list(map(lambda x: list(map(lambda y: int(y), x)), X_data))
-
-        return X_data, Y_data, negative_X_test, negative_Y_test
-# !!!!!!!!!!!!!!!!!!!!!!!!! TODO TODO TODO !!!!!!!!!!!!!!!!!!!!!!!!
-
-
 class ArtrificialDataset(Dataset):
     def __init__(self, base_dir, generator, artrificial_rows_count):
         super(ArtrificialDataset, self).__init__(base_dir)
