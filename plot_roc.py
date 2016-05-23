@@ -50,16 +50,17 @@ if __name__ == '__main__':
 
         ##############################################################################
         # Plot of a ROC curve for a specific class
-        # plt.figure()
-        # plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
-        # plt.plot([0, 1], [0, 1], 'k--')
-        # plt.xlim([0.0, 1.0])
-        # plt.ylim([0.0, 1.05])
-        # plt.xlabel('False Positive Rate')
-        # plt.ylabel('True Positive Rate')
-        # plt.title('ROC curve for %s' % mail)
-        # plt.legend(loc="lower right")
-        # plt.savefig(os.path.join(roc_dir, mail + ".png"))
+        plt.figure()
+        plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+        plt.plot([0, 1], [0, 1], 'k--')
+        plt.plot([0, 1], [1, 0], 'k--')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('ROC curve for %s' % mail)
+        plt.legend(loc="lower right")
+        plt.savefig(os.path.join(roc_dir, mail + ".png"))
     eers = np.array(eers)
     print("average EER:", np.mean(eers), "(" + str(np.std(eers)) + ")")
 
