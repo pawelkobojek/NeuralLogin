@@ -1,0 +1,260 @@
+\chapter{Wstęp}
+Problem weryfikacji (uwierzytelnienia) użytkownika jest najczęściej rozwiązywany poprzez przypisanie znanego tylko użytkownikowi hasła składającego ze skończonego ciągu znaków. Po wpisaniu tego hasła, strona ufająca może stwierdzić, czy ma do czynienia z właściwą osobą. Takie rozwiązanie nie jest jednak wolne od wad. Możliwą jest na przykład sytuacja, w której użytkownik zapomina jak brzmiało jego hasło, co wymaga od strony ufającej zapewnienia dodatkowego mechanizmu na taki przypadek (np. możliwość zresetowania hasła zapewniona tylko tej osobie). Dodatkowo, tradycyjne hasła, dysponując odpowiednimi zasobami w postaci czasu i mocy obliczeniowej, można złamać metodą siłową (przy założeniu braku dodatkowych zabezpieczeń przeciwko takim technikom). Istotną wadą tradycyjnego zabezpieczenia hasłem pozostaje też problem zabezpieczenia dostępu do niego samego osobom niepowołanym.
+Alternatywną metodą jest zastosowanie zabezpieczeń biometrycznych. Tego typu metody identyfikują człowieka na podstawie jego cech fizycznych, np. odcisków palca. Metody biometrii obejmują szeroki zakres sposobów kontroli dostępu: rozpoznawanie tęczówki oka, wykonywanie podpisu odręcznego, rozpoznawanie twarzy itd. \cite{BIOMETRICS}
+
+Jedną z takich cech jest sposób w jaki człowiek pisze na klawiaturze. Już w latach 80. XX wieku podjęto rozpoczęto prace nad algorytmami, które rozpoznawałyby człowieka przy użyciu tejże cechy \cite{KD_1}. Przeprowadzono wiele eksperymentów, które wykazały, że jest to dobry wyznacznik tożsamości \cite{KD_1, KD_2, KD_3, KD_4}.
+
+Dobre wyniki osiągane w tej dziedzinie dają powody by sądzić, że można stworzyć scentralizowany system pozwalający na autoryzacje przy użyciu samego tylko wpisywania tekstu (np. adres e-mail). Wówczas użytkownicy nie musieliby pamiętać dużej ilości haseł używanych do autoryzacji w różnych serwisach, lecz byliby identyfikowani na podstawie sposobu w jaki wpisują swój adres e-mail na klawiaturze.
+
+Ta praca przedstawia algorytm, którego zadaniem jest rozpoznawanie użytkownika na podstawie sposobu pisania na klawiaturze. Użytkownik jest uwierzytelniany na podstawie sposobu wpisywania swojego adresu e-mail.
+
+\chapter{Problem}
+\section{Opis problemu}
+Tak jak napisano we wstępie, ludzi charakteryzuje unikalny wzorzec dynamiki uderzeń w klawisze (ang. Keystroke Dynamics). Żeby matematycznie opisać taki wzorzec, trzeba najpierw pobrać dane od użytkownika. W tym celu zbierane są informacje na temat czasu wciśnięcia i/lub puszczenia każdego klawisza. Następnie wyliczyć z tego można różne miary, np. \cite{KD_5}:
+\begin{itemize}
+\item Dwell time - czas wciśnięcia danego klawisza (czas od momentu wciśnięcia do momentu puszczenia)
+\item Flight time - różnica czasu pomiędzy wciśnięciami kolejnych klawiszy
+\end{itemize}
+Należy pamiętać, że użytkownik może popełnić błąd przy wpisywaniu tekstu, więc wektory reprezentujące poszczególne próby mogą mieć różną długość.
+
+Następnie dane te trafiają do pewnego modelu, którego zadaniem jest udzielić odpowiedzi na pytanie, czy użytkownik jest tym za kogo się podaje. Model ten może być np. systemem detekcji anomalii.
+
+Wobec tego cały algorytm składa się z dwóch części: sposobu pobierania danych i ekstrakcji cech oraz modelu klasyfikującego. Projektowanie nowych rozwiązań może zatem dotyczyć obu tych modułów.
+
+\section{Stosowane algorytmy}
+Wpływ na skuteczność może mieć już sam sposób zbierania danych od użytkownika a także sama natura tych danych. W najbardziej podstawowym podejściu opis użytkownika składa się po prostu z czasów wciśnięć kolejnych klawiszy (następnie wylicza się z tego opisane wyżej czasy - Dwell/Flight). Można też jednocześnie mierzyć inne wartości, np. ruch gałki oka. Pewne możliwości stwarza wykorzystanie urządzeń mobilnych, ze względu na ich wyposażenie w dodatkowe sensory, np. żyroskop, akcelerometr \cite{MOBILE_KD1, MOBILE_KD2, MOBILE_KD3}. Poza samymi danymi dotyczącymi momentów uderzeń znaczenie mają popełniane przez użytkownika błędy (wobec tego dane wejściowe nie muszą mieć takiej samej długości) oraz sposób ich usuwania (np. użycie klawisza \textit{delete} w porównaniu do klawisza \textit{backspace}.
+
+Jako klasyfikatory do rozwiązania problemu identyfikacji użytkownika na podstawie sposobu pisania na klawiaturze wykorzystuje się różne algorytmy uczenia maszynowego. Jednym z najpopularniejszych [TODO: źródło] jest algorytm k najbliższych sąsiadów (k Nearest Neighbors) [TODO: źródło] (ten właśnie algorytm zostanie porównany z proponowanym w tej pracy). Inne algorytmy to np. SVM, Z-score, sieci neuronowe, algorytm k-średnich itd. \cite{BENCHMARK_SET}
+
+\section{Opis rozwiązywanego problemu oraz dodatkowe założenia}
+Problem dla którego algorytm przedstawiony w tej pracy miałby być użyteczny polega na stworzeniu systemu, który działałby jako scentralizowany serwis udostępniający możliwość identyfikacji użytkownika na podstawie sposobu pisania na klawiaturze swojego adresu e-mail. Tym sposobem, adres oraz biologiczna cecha człowieka stałyby się jedynym koniecznym identyfikatorem w internecie i moglibyśmy znacznie ograniczyć konieczność używania dużej ilości trudnych do zapamiętania haseł. Z usług takiego systemu mogłyby korzystać zewnętrzne serwisy, które mogłyby przesłać doń dane zebrane przy wpisywaniu przez swojego użytkownika adresu i otrzymać w odpowiedzi informację, czy osoba wpisująca adres jest tym, za kogo się podaje.
+
+Algorytm, który opisuje ta praca podlega dodatkowym (w stosunku do opisanych w poprzednich sekcjach) ograniczeniom ze względu na zastosowanie z myślą o którym był projektowany. Po pierwsze, chcielibyśmy aby system którego istotną część stanowi algorytm pozwalał na scentralizowaną obsługę logowania i udostępniał innym serwisom tę usługę. Przy ogromnej liczbie użytkowników internetu[TODO: source], musimy założyć praktycznie nieograniczoną przez złożoność i specyfikę algorytmu skalowalność pod względem ilości obsługiwanych ludzi.
+
+System taki mógłby być potencjalnie używany do autoryzacji do wielu usług za pomocą tego jednego sposobu identyfikacji. Od takiego rozwiązania wymaga się przede wszystkim zapewnienia bezpieczeństwa zasobów, których chroni - m. in. wzbronienia dostępu osobom do tego nieupoważnionym. Ponieważ uzyskanie dostępu przez taką osobę dałoby jej dostęp do wielu usług jednocześnie, mogłoby to mieć fatalne konsekwencje. Nie uwzględniając tego problemu, system nie rozwiązywałby sytuacji (a wręcz ją pogarszał), w której użytkownik posiada jedno hasło do wielu kont i wpadło ono w niepowołane ręce. Lepszą sytuacją wydaje się być odrzucenia prawdziwego użytkownika, niż akceptacja atakującego. Projektowany algorytm powinien zatem skupić się na minimalizacji ilości błędów typu \textit{False Positive}, czyli przypadków niewłaściwego uznania przykładu za pozytywny, czyli wpuszczeniu użytkownika niepowołanego. Idealną byłaby sytuacja całkowitego wyeliminowania takich przypadków, nawet kosztem znacznego zmniejszenia całkowitej skuteczności.
+
+\chapter{Eksperyment}
+\section{Własny zbiór}
+W celu przeprowadzenia eksperymentu przygotowano własny zbiór danych. Do tego celu został użyty gotowy system (który nie stanowi części tej pracy) w postaci strony internetowej zbierającej dane. Każdy użytkownik został poproszony o wpisanie swojego adresu pięć razy oraz wpisanie jeden raz adresów pozostałych użytkowników. W eksperymencie wzięło udział łącznie dziesięć osób (studenci). Ze względu na niską jakość danych (niewypełnienie wszystkich pól, użyciu metody kopiuj-wklej), dane od trzech osób zostały odrzucone. Ostatecznie zatem, zbiór składał się z danych pochodzących od siedmiu osób. Liczba próbek każdej z osób różniła się (od 12 do 20). Ze względu na tak małą ilość danych nie można było zastosować standardowych technik walidacji (tj. podzielenia zbioru na część treningową, walidacyjną oraz testową). Sposób walidacji skuteczności algorytmu zostanie opisane w sekcji Wyniki (TODO: referencja do odpowiedniej sekcji). Warto zauważyć, że dane w tym zbiorze uwzględniają informację o ewentualnych pomyłkach, a zatem długości wektorów różnią się.
+\section{Zbiór benchmarkowy}
+Ze względu na małą ilość danych w zbiorze opisanym w poprzedniej sekcji, do walidacji algorytmu użyto (jednak nie w sposób bezpośredni) również ogólnodostępnego (pod adresem \cite{BENCHMARK_SET_URL} - znaleźć tam można wyczerpujący opis zbioru oraz sposobu kolekcji danych) zbioru. Został on wykorzystany do ewaluacji algorytmów w pracy \cite{BENCHMARK_SET}. Zbiór ów zawiera dane o sposobie pisania dla 51 ludzi (każdy wpisał 400 razy daną frazę). Pomimo tego, że pierwotne został on stworzony do wykorzystania nauki i ewaluacji algorytmów o innej naturze (tzw. algorytmów detekcji anomalii), to ma on dużą wartość z punktu widzenia algorytmu opisywanego w tej pracy. Jest tak dlatego, że użytkownicy od których zbierano dane wpisywali tę samą frazę (dokładniej: to samo hasło). Dzięki temu dla każdego użytkownika możemy stworzyć zbiór, w którym jego dane uznamy za pozytywne, zaś dane wszystkich innych użytkowników za negatywne. W każdym takim zbiorze ilość danych negatywnych jest jednak 50 razy większa niż pozytywnych. Uczenie klasyfikatora na takim zbiorze sprawia, że uczy się on zawsze klasyfikować dane jako negatywne, co ze względu na ich ilość sprawa złudne wrażenie wysokiej skuteczności. Z tego powodu, dla każdego użytkownika wybrano 400 losowych próbek pozostałych użytkowników, żeby zbalansować ilość danych pozytywnych i negatywnych. Ostatecznie zbiór użyty do uczenia oraz walidacji sieci składa się z 51 zbiorów (po jednym dla każdego użytkownika), każdy po 800 próbek - 400 pozytywnych oraz 400 negatywnych wybranych losowo z puli pozostałych użytkowników. Pewną istotną wadą tego zbioru jest fakt, że zawiera on dane pochodzące tylko z próbek, w których użytkownik wpisał hasło bezbłędnie - brak więc informacji o częstotliwości pomyłek.
+
+Jako że zbiór ten nie został wykorzystany w sposób bezpośredni, oraz że natura zastosowanego algorytmu a także sposób ewaluacji są zupełnie inne niż te, które przetestowali twórcy tego zbioru, nie można wprost porównywać wyników otrzymanych w tej pracy z wynikami oryginalnymi.
+
+\chapter{Wyniki i wnioski}
+\section{Wyniki}
+Wyniki są przedstawione w następujący sposób: dla obu zbiorów zostały przetestowane dwa  (różne, ale nie rozłączne) zbiory algorytmów sieci rekurencyjnych. Dodatkowo, na zbiorze własnym został przetestowany algorytm używający sposobu generowania sztucznych danych negatywnych oraz porównany z algorytmem kNN przy takim samym sposobie ewaluacji (opisanym poniżej). Dla każdego algorytmu uruchomionego na danym zbiorze zostały przygotowane tablice pomyłek (jedna zbiorcza oraz po jednej dla każdego użytkownika) oraz narysowane krzywe ROC.
+\label{sec:results}
+	\subsection{Zbiór własny}
+	Tak jak wspominano wcześniej, ze względu na bardzo małą ilość danych ewaluacja skuteczności algorytmu w tradycyjny sposób (tj. poprzez podzielenie zbioru na podzbiory treningowy, walidacyjny oraz testowy) byłaby niepraktyczna. Z tego względu zastosowano metodę \textit{leave-n-out-crossvalidation} (z $n=1$) \cite{1-X-VAL}. Polega ona na tym, że w dla każdego elementu zbioru uczącego uczymy model na pozostałych elementach i testujemy na nim skuteczność. Następnie liczymy średnią skuteczność dla $m$ nauczonych w ten sposób klasyfikatorów, gdzie $m$ oznacza liczność zbioru uczącego.
+		\subsubsection{Model z jedną warstwą LSTM i kodowaniem wartości}
+		Ogólna skuteczność na wszystkich zbiorach wyniosła $58\%$. Tablica pomyłek dla wszystkich zbiorów przedstawia się następująco: \\
+		\begin{tabular}{|c|c|c|}
+		\hline
+		& Przyjęto & Odrzucono \\ \hline
+		Użytkownik & 359 & 138 \\ \hline
+		Intruz & 164 & 72 \\ \hline
+		& Próg 0.5 & Próg eliminujacy FP \\ \hline
+		Skuteczność & 0.58 & 0.55 \\ \hline
+		\end{tabular}
+
+		Lepszy ogląd daje jednak przedstawienie tablic pomyłek oraz krzywych ROC dla poszczególnych adresów: \\
+		TODO: anonimizacja adresów \\
+		fokowk@... \\
+		\begin{tabular}{|c|c|c|}
+		\hline
+		Całkowita liczba próbek & Liczba elementów pozytywnych & Liczba elementów negatywnych \\ \hline
+		12 & 7 & 5 \\ \hline
+		& Przyjęto & Odrzucono \\ \hline
+		Użytkownik & 7 & 0 \\ \hline
+		Intruz & 2 & 3 \\ \hline
+		& Próg 0.5 & Próg eliminujacy FP = 0.5261 \\ \hline
+		Skuteczność & 0.5 & 1 \\ \hline
+		\end{tabular}
+
+		kobojekp@... \\
+		\begin{tabular}{|c|c|c|}
+		\hline
+		Całkowita liczba próbek & Liczba elementów pozytywnych & Liczba elementów negatywnych \\ \hline
+		13 & 6 & 7 \\ \hline
+		& Przyjęto & Odrzucono \\ \hline
+		Użytkownik & 6 & 1 \\ \hline
+		Intruz & 1 & 5 \\ \hline
+		& Próg 0.5 & Próg eliminujacy FP = 0.9837 \\ \hline
+		Skuteczność & 0.53 & 1 \\ \hline
+		\end{tabular}
+
+		mareczek.oaza@... \\
+		\begin{tabular}{|c|c|c|}
+		\hline
+		Całkowita liczba próbek & Liczba elementów pozytywnych & Liczba elementów negatywnych \\ \hline
+		18 & 14 & 4 \\ \hline
+		& Przyjęto & Odrzucono \\ \hline
+		Użytkownik & 14 & 0 \\ \hline
+		Intruz & 4 & 0 \\ \hline
+		& Próg 0.5 & Próg eliminujacy FP = 0.9119 \\ \hline
+		Skuteczność & 0.72 & 0.61 \\ \hline
+		\end{tabular}
+
+		mat.chech@... \\
+		\begin{tabular}{|c|c|c|}
+		\hline
+		Całkowita liczba próbek & Liczba elementów pozytywnych & Liczba elementów negatywnych \\ \hline
+			    	  12  & 5             & 7 \\ \hline
+						    & Przyjęto   & Odrzucono \\ \hline
+		Użytkownik  & 3             & 2 \\ \hline
+		Intruz		    & 2             & 5 \\ \hline
+						    & Próg 0.5  & Próg eliminujacy FP = 0.8566 \\ \hline
+		Skuteczność & 0.66       & 1 TODO\\ \hline
+		\end{tabular}
+
+		mjablonski92@... \\
+		\begin{tabular}{|c|c|c|}
+		\hline
+		Całkowita liczba próbek & Liczba elementów pozytywnych & Liczba elementów negatywnych \\ \hline
+		20 & 14 & 6 \\ \hline
+						   & Przyjęto & Odrzucono \\ \hline
+		Użytkownik & 14 & 0 \\ \hline
+		Intruz & 2 & 4 \\ \hline
+		& Próg 0.5 & Próg eliminujacy FP = 0.9924 \\ \hline
+		Skuteczność & 0.75 & 0.61 \\ \hline
+		\end{tabular}
+
+		piotr.chmiel@... \\
+		\begin{tabular}{|c|c|c|}
+		\hline
+		Całkowita liczba próbek & Liczba elementów pozytywnych & Liczba elementów negatywnych \\ \hline
+			    	  14  & 7             & 7 \\ \hline
+						    & Przyjęto   & Odrzucono \\ \hline
+		Użytkownik  & 1             & 6 \\ \hline
+		Intruz		    & 4             & 3 \\ \hline
+						    & Próg 0.5  & Próg eliminujacy FP = 0.9989 \\ \hline
+		Skuteczność & 0.29       & 1 TODO\\ \hline
+		\end{tabular}
+
+		\subsubsection{Model z dwiemia warstawami LSTM}
+		Ten model został przetestowany w dwóch wersjach. W jednej z nich użyto dropoutu jako techniki regularyzacji (wyniki w nawiasach przedstawiają osiągi tego właśnie modelu). Ogólną skuteczność obu tych modeli przedstawia poniższa tablica pomyłek: \\
+
+		\begin{tabular}{|c|c|c|}
+		\hline
+		& Przyjęto & Odrzucono \\ \hline
+		Użytkownik & 456 & 41 \\ \hline
+		Intruz & 75 & 161 \\ \hline
+		& Próg 0.5 & Próg eliminujacy FP \\ \hline
+		Skuteczność & 0.85 (0.88) & 0.52 (0.8) \\ \hline
+		\end{tabular}
+
+		Wyniki dla poszczególnych adresów prezentują się następująco:
+
+		fokowk@... \\
+		\begin{tabular}{|c|c|c|}
+		\hline
+		Całkowita liczba próbek & Liczba elementów pozytywnych & Liczba elementów negatywnych \\ \hline
+			    	  12  & 7             & 5 \\ \hline
+						    & Przyjęto   & Odrzucono \\ \hline
+		Użytkownik  & 7             & 0 \\ \hline
+		Intruz		    & 2             & 3 \\ \hline
+						    & Próg 0.5  	& Próg eliminujacy FP = 0.997 (0.9982) \\ \hline
+		Skuteczność & 0.83 (0.83)       & 0.42 (0.42) TODO\\ \hline
+		\end{tabular}
+
+		kobojekp@... \\
+		\begin{tabular}{|c|c|c|}
+		\hline
+		Całkowita liczba próbek & Liczba elementów pozytywnych & Liczba elementów negatywnych \\ \hline
+			    	  13  & 6             & 7 \\ \hline
+						    & Przyjęto   & Odrzucono \\ \hline
+		Użytkownik  & 6             & 1 \\ \hline
+		Intruz		    & 1             & 5 \\ \hline
+						    & Próg 0.5  	& Próg eliminujacy FP = 0.9901 (0.5) \\ \hline
+		Skuteczność & 0.85 (0.92)       & 1 (1) TODO\\ \hline
+		\end{tabular}
+
+		mareczek.oaza@... \\
+		\begin{tabular}{|c|c|c|}
+		\hline
+		Całkowita liczba próbek & Liczba elementów pozytywnych & Liczba elementów negatywnych \\ \hline
+			    	  18  & 14             & 4 \\ \hline
+						    & Przyjęto   & Odrzucono \\ \hline
+		Użytkownik  & 13             & 1 \\ \hline
+		Intruz		    & 2             & 2 \\ \hline
+						    & Próg 0.5  	& Próg eliminujacy FP = 0.9986 (0.9951) \\ \hline
+		Skuteczność & 0.83 (0.83)       & 0.23 (0.64) TODO\\ \hline
+		\end{tabular}
+
+		mat.chech@... \\
+		\begin{tabular}{|c|c|c|}
+		\hline
+		Całkowita liczba próbek & Liczba elementów pozytywnych & Liczba elementów negatywnych \\ \hline
+			    	  12  & 5             & 7 \\ \hline
+						    & Przyjęto   & Odrzucono \\ \hline
+		Użytkownik  & 7             & 0 \\ \hline
+		Intruz		    & 0             & 5 \\ \hline
+						    & Próg 0.5  	& Próg eliminujacy FP = 0.5 (0.5) \\ \hline
+		Skuteczność & 1 (1)       & 1 (1) TODO\\ \hline
+		\end{tabular}
+
+		mjablonski@... \\
+		\begin{tabular}{|c|c|c|}
+		\hline
+		Całkowita liczba próbek & Liczba elementów pozytywnych & Liczba elementów negatywnych \\ \hline
+			    	  20  & 14             & 6 \\ \hline
+						    & Przyjęto   & Odrzucono \\ \hline
+		Użytkownik  & 13             & 1 \\ \hline
+		Intruz		    & 2             & 4 \\ \hline
+						    & Próg 0.5  	& Próg eliminujacy FP = 0.9987 (0.9996) \\ \hline
+		Skuteczność & 0.83 (0.9)       & 0.3 (0.3) TODO\\ \hline
+		\end{tabular}
+
+		piotrchmiel90@... \\
+		\begin{tabular}{|c|c|c|}
+		\hline
+		Całkowita liczba próbek & Liczba elementów pozytywnych & Liczba elementów negatywnych \\ \hline
+		14  & 7 & 7 \\ \hline
+		& Przyjęto & Odrzucono \\ \hline
+		Użytkownik & 7 & 0 \\ \hline
+		Intruz & 1 & 6 \\ \hline
+		& Próg 0.5 & Próg eliminujacy FP = 0.9961 (0.8486) \\ \hline
+		Skuteczność & 0.93 (0.93) & 0.5 (1) TODO\\ \hline
+		\end{tabular}
+	\subsection{Zbiór benchmarkowy}
+	Zbiór benchmarkowy, tak jak wcześniej opisano, zawiera dużo więcej danych (zarówno jeśli chodzi o liczbę ludzi biorących udział w eksperymencie jak i liczbę próbek pozostawionych przez każdego z nich). Jest on zatem bardziej miarodajny dla oceny podejścia prezentowanego w tej pracy. Ze względu na dużą liczbę uczestników eksperymentu tablice pomyłek nie są bezpośrednio prezentowane. Pliki zawierające dokładne wyniki zostały załączone do pracy.
+
+	Jako pierwszy przetestowany model, został wybrany ten, który dał najlepsze wyniki na zbiorze z poprzedniej sekcji. Ponieważ jednak nie dał on zadowalających wyników, stworzono kolejne, bardziej złożone modele.
+	\subsubsection{Model z dwiema warstwami LSTM}
+	Jest to ten sam model, który został użyty wcześniej, przy badaniach nad zbiorem przygotowanym w trakcie tworzenia pracy. W tym przypadku jednak, przetestowano tylko wersję z dropoutem między komórkami LSTM. Osiągnięto następujące wyniki:
+
+	\begin{tabular}{|r|c|c|}
+	\hline
+	& Próg 0.5 & Progi eliminujące FP \\ \hline
+	Średnia skuteczność & 0.759 & 0.59 \\ \hline
+	Max & 0.975 & 0.994 \\ \hline
+	Min & 0.4875 & 0.5 \\ \hline
+	Odchylenie standardowe & 0.101 & 0.1344 \\ \hline
+	\end{tabular}
+
+	\subsubsection{Model z trzema warstwami LSTM}
+	\begin{tabular}{|r|c|c|}
+	\hline
+	& Próg 0.5 & Progi eliminujące FP \\ \hline
+	Średnia skuteczność & 0.764 & 0.61 \\ \hline
+	Max & 0.9875 & 0.9875 \\ \hline
+	Min & 0.5187 & 0.5 \\ \hline
+	Odchylenie standardowe & 0.114 & 0.1399 \\ \hline
+	\end{tabular}
+
+	\subsubsection{Model z trzeba warstwami GRU}
+	\begin{tabular}{|r|c|c|}
+	\hline
+	& Próg 0.5 & Progi eliminujące FP \\ \hline
+	Średnia skuteczność & 0.83 & 0.68 \\ \hline
+	Max & 0.9875 & 0.9875 \\ \hline
+	Min & 0.5 & 0.5 \\ \hline
+	Odchylenie standardowe & 0.099 & 0.1397 \\ \hline
+	\end{tabular}
+\section{Wnioski i dalszy rozwój}
+Najlepsze osiągnięte wyniki są satysfakcjonujące (TODO: czy na pewno wystarczająco?, więcej wniosków).
+
+W trakcie pisania pracy ukazał się artykuł \cite{LSTM_ANOMALY_DET} prezentujący użycie sieci LSTM jako detektorów anomalii. Gdyby użyć ich w ten sposób, możliwa byłaby ewaluacja taka sama jak w pracy \cite{BENCHMARK_SET}, z której pochodzi benchamrkowy zbiór. Wówczas łatwiej byłoby porównać wynik algorytmu z aktualnymi osiągnięciami w dziedzinie.
+
+Jeśli mieć na uwadze zarysowany w sekcji (TODO: referencja do sekcji, w której opisywany jest problem dla którego powstał algorytm) problem, to możnaby usprawnić algorytm tak, by zbierał dane w czasie rzeczywistym (tzw. \textit{online learning}). Żeby uzyskać jednak odpowiednią (dla uczenia w czasie w rzeczywistym) szybkość, należałoby użyć wsparcia GPU. Przeniesienie kodu uczenia na karty graficzne pozwoliłoby też na testowanie większych modeli w rozsądnym czasie. Dzięki temu, potencjalnie możnaby znaleźć modele o większej skuteczności. Nadzieję na to daje fakt, iż teoretycznie, korzystając z dropoutu \cite{DROPOUT_RNN} można znacznie zwiększyć wielkość sieci bez utknięcia w sytuacji przeuczenia.

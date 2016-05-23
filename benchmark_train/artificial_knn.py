@@ -1,5 +1,4 @@
 import sys, os
-import matplotlib.pyplot as plt
 from sklearn.cross_validation import train_test_split as splitter
 from sklearn.preprocessing import normalize
 from sklearn.utils import shuffle
@@ -11,12 +10,11 @@ import numpy as np
 import theano
 np.random.seed(1337)  # for reproducibility
 
-from training.keras.dataset import BenchmarkDataset
+from training.keras.dataset import BenchmarkDataset, ArtrificialDataset, GaussianGenerator
 from keras.preprocessing import sequence
 from keras.utils import np_utils
-from keras.callbacks import Callback
 
-from config import LSTM3Layers3DropoutsConfig, GRU3Layers3DropoutsConfig, LSTM2Layers2DropoutsConfig
+from config import ArtificialLSTM3Layers3DropoutsConfig, ArtificialGRU3Layers3DropoutsConfig, ArtificialLSTM2Layers2DropoutsConfig
 
 def train_test_split(X, y, test_size=0.2):
     positive_count = sum(y)
@@ -73,18 +71,18 @@ def find_threshold(y_score, y):
 
 
 if __name__ == "__main__":
-    dataset_dir = "benchmark_set_full"
+    dataset_dir = "benchmark_set"
     emails_file = "subjects.txt"
-    loss_dir = "loss_graphs"
 
     dataset = BenchmarkDataset(dataset_dir)
     subjects = get_emails(emails_file)
     configs = [
-                #LSTM2Layers2DropoutsConfig(first_layer=240, second_layer=100, input_length=10),
-                LSTM3Layers3DropoutsConfig(first_layer=240, second_layer=240, input_length=10),
-                #GRU3Layers3DropoutsConfig(first_layer=240, second_layer=240, input_length=10)
+                ArtificialLSTM2Layers2DropoutsConfig(first_layer=240, second_layer=100, input_length=10),
+                ArtificialLSTM3Layers3DropoutsConfig(first_layer=240, second_layer=240, input_length=10),
+                ArtificialGRU3Layers3DropoutsConfig(first_layer=240, second_layer=240, input_length=10)
             ]
 
+    generator = GaussianGenerator(mean=0, std=150)
     for config in configs:
         # We are going to train separate model for each subject
         for subject in subjects:
@@ -92,6 +90,11 @@ if __name__ == "__main__":
             X = np.array(X)
             y = np.array(y)
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+            halfind = len(X_train) / 2
+            print(halfind)
+            for i in range(int(halfind)):
+                X_train[halfind + i] = generator.generate(X_train[i])
+
             X_train = normalize(X_train)
             X_test = normalize(X_test)
 
@@ -103,29 +106,11 @@ if __name__ == "__main__":
             X_train = np.reshape(X_train, (X_train.shape[0], 10, 1))
             X_test = np.reshape(X_test, (X_test.shape[0], 10, 1))
 
-            class LossHistory(Callback):
-                def on_train_begin(self, logs={}):
-                    self.losses = []
-                    self.i = 0
-
-                def on_batch_end(self, batch, logs={}):
-                    if self.i % 10 == 0:
-                        self.losses.append(logs.get('loss'))
-                    self.i += 1
-
-            history = LossHistory()
-            print("Train...", subject)
+            print("Train...")
             model.fit(X_train, y_train, batch_size=config.batch_size, nb_epoch=config.epochs,
-                      validation_data=(X_test, y_test), callbacks=[history])
+                      validation_data=(X_test, y_test))
             score, acc = model.evaluate(X_test, y_test,
                                         batch_size=config.batch_size)
-
-            # print(history.losses)
-            #TODO narysować i zapisać do pliku
-            plt.figure()
-            plt.plot(np.arange(0, len(history.losses)), history.losses)
-            plt.savefig(os.path.join(loss_dir,  type(config).__name__ + "__" + subject + ".png"))
-
 
             prediction = model.predict(X_test).flatten()
             predicted_classes = np.round(prediction)
