@@ -24,3 +24,18 @@ Results are simply printed to stdout as a part of the pretty verbose learning pr
 
 ## Plotting ROCurves
 If you want to plot ROCs run `plot_roc.py` passing results directory as an argument. It will draw graph for every address in a list being part of legendary `data.zip` file.
+
+## Citing NeuralLogin
+If you find NeuralLogin useful in your research, please consider citing:
+```
+@article{kobojek2016application,
+  title={Application of Recurrent Neural Networks for User Verification based on Keystroke Dynamics},
+  author={Kobojek, Pawel and Saeed, Khalid},
+  journal={Journal of Telecommunications and Information Technology},
+  number={3},
+  pages={80},
+  year={2016},
+  publisher={Instytut Lacznosci-Panstwowy Instytut Badawczy (National Institute of Telecommunications)}
+}
+```
+
